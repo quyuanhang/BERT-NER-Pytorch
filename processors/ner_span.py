@@ -244,9 +244,62 @@ class CluenerProcessor(DataProcessor):
             examples.append(InputExample(guid=guid, text_a=text_a, subject=subject))
         return examples
 
+class AipfProcessor(DataProcessor):
+    """Processor for the chinese ner data set."""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(self._read_text(os.path.join(data_dir, "train.char.bmes")), "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(self._read_text(os.path.join(data_dir, "dev.char.bmes")), "dev")
+
+    def get_test_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(self._read_text(os.path.join(data_dir, "test.char.bmes")), "test")
+
+    def get_labels(self):
+        """See base class."""
+        return [
+            "O",
+            "其他风险事件主体",
+            "财务造假事件主体",
+            "亏损事件主体",
+            "董监高成员异常事件",
+            "评级恶化事件主体",
+            "减持事件主体",
+            "资产异常事件主体",
+            "破产事件主体",
+            "停产减产事件主体",
+            "违约失信事件主体",
+            "资产查封事件主体",
+        ]
+
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+        examples = []
+        for (i, line) in enumerate(lines):
+            if i == 0:
+                continue
+            guid = "%s-%s" % (set_type, i)
+            text_a = line['words']
+            labels = []
+            for x in line['labels']:
+                if 'M-' in x:
+                    labels.append(x.replace('M-','I-'))
+                elif 'E-' in x:
+                    labels.append(x.replace('E-', 'I-'))
+                else:
+                    labels.append(x)
+            subject = get_entities(labels,id2label=None,markup='bios')
+            examples.append(InputExample(guid=guid, text_a=text_a, subject=subject))
+        return examples
+
 ner_processors = {
     "cner": CnerProcessor,
-    'cluener':CluenerProcessor
+    'cluener':CluenerProcessor,
+    "aipf2": AipfProcessor
 }
 
 

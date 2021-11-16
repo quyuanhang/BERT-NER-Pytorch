@@ -1,8 +1,8 @@
 CURRENT_DIR=`pwd`
 export BERT_BASE_DIR=$CURRENT_DIR/prev_trained_model/bert-base-chinese
-export DATA_DIR=$CURRENT_DIR/datasets
+export DATA_DIR=/home/aipf/work/建行杯数据集/舆情预警/train2
 export OUTPUR_DIR=$CURRENT_DIR/outputs
-TASK_NAME="cner"
+TASK_NAME="aipf2"
 #
 python run_ner_crf.py \
   --model_type=bert \
@@ -11,7 +11,7 @@ python run_ner_crf.py \
   --do_train \
   --do_eval \
   --do_lower_case \
-  --data_dir=$DATA_DIR/${TASK_NAME}/ \
+  --data_dir=$DATA_DIR/ \
   --train_max_seq_length=128 \
   --eval_max_seq_length=512 \
   --per_gpu_train_batch_size=24 \

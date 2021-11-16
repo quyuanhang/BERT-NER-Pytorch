@@ -234,7 +234,75 @@ class CluenerProcessor(DataProcessor):
             examples.append(InputExample(guid=guid, text_a=text_a, labels=labels))
         return examples
 
+class AipfProcessor(DataProcessor):
+    """Processor for the chinese ner data set."""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(self._read_text(os.path.join(data_dir, "train.txt")), "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(self._read_text(os.path.join(data_dir, "dev.txt")), "dev")
+
+    def get_test_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(self._read_text(os.path.join(data_dir, "test.txt")), "test")
+
+    def get_labels(self):
+        """See base class."""
+        return [
+            "X",
+            "B-其他风险事件主体",
+            "B-财务造假事件主体",
+            "B-亏损事件主体",
+            "B-董监高成员异常事件",
+            "B-评级恶化事件主体",
+            "B-减持事件主体",
+            "B-资产异常事件主体",
+            "B-破产事件主体",
+            "B-停产减产事件主体",
+            "B-违约失信事件主体",
+            "B-资产查封事件主体",
+            "I-其他风险事件主体",
+            "I-财务造假事件主体",
+            "I-亏损事件主体",
+            "I-董监高成员异常事件",
+            "I-评级恶化事件主体",
+            "I-减持事件主体",
+            "I-资产异常事件主体",
+            "I-破产事件主体",
+            "I-停产减产事件主体",
+            "I-违约失信事件主体",
+            "I-资产查封事件主体",
+            'O',
+            "[START]",
+            "[END]"
+        ]
+
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+        examples = []
+        for (i, line) in enumerate(lines):
+            if i == 0:
+                continue
+            guid = "%s-%s" % (set_type, i)
+            text_a= line['words']
+            # BIOS
+            labels = []
+            for x in line['labels']:
+                if 'M-' in x:
+                    labels.append(x.replace('M-','I-'))
+                elif 'E-' in x:
+                    labels.append(x.replace('E-', 'I-'))
+                else:
+                    labels.append(x)
+            examples.append(InputExample(guid=guid, text_a=text_a, labels=labels))
+        return examples
+
+
 ner_processors = {
     "cner": CnerProcessor,
-    'cluener':CluenerProcessor
+    'cluener':CluenerProcessor,
+    "aipf2": AipfProcessor
 }
