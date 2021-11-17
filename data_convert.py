@@ -9,8 +9,9 @@ def load_datas_from_json(fp):
         data = json.load(f)
     return data["result"]
 
-def format_file(fp):
-    data_list = load_datas_from_json(fp)
+def format_file(fp=None, data_list=None):
+    if data_list == None:
+        data_list = load_datas_from_json(fp)
     datas = []
     for data in data_list:
         try:
@@ -45,7 +46,7 @@ def format_files(input_dir, output_dir):
     for root, _, files in os.walk(input_dir):
         for file in files:
             fp = os.path.join(root, file)
-            datas = format_file(fp)
+            datas = format_file(fp=fp)
             train_file = open(train_name, mode="a")
             dev_file = open(dev_name, mode="a")
             for content_list, label_list in datas:
@@ -58,10 +59,53 @@ def format_files(input_dir, output_dir):
                 f.write("\n")
             train_file.close()
             dev_file.close()
-            
+    return
+
+def format_files_shuffle(input_dir, output_dir):
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    data_list = []
+    for root, _, files in os.walk(input_dir):
+        for file in files:
+            fp = os.path.join(root, file)
+            data = load_datas_from_json(fp)
+            data = format_file(data_list=data)
+            data_list.extend(data)
+            random.shuffle(data_list)
+            split = int(len(data_list) * 0.7)
+            train_list, dev_list = data_list[:split], data_list[split:]
+            with open(os.path.join(output_dir, "train.txt"), "w") as f:
+                for content_list, label_list in train_list:
+                    for content, label in zip(content_list, label_list):
+                        f.write("{} {}\n".format(content, label))
+                    f.write("\n")
+            with open(os.path.join(output_dir, "dev.txt"), "w") as f:
+                for content_list, label_list in dev_list:
+                    for content, label in zip(content_list, label_list):
+                        f.write("{} {}\n".format(content, label))
+                    f.write("\n")
+    return
+
+def format_predict_files(input_dir, output_dir):
+    train_name = os.path.join(output_dir, "test.txt")
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    if os.path.exists(train_name):
+        os.remove(train_name)
+    for root, _, files in os.walk(input_dir):
+        for file in files:
+            fp = os.path.join(root, file)
+            datas = format_file(fp=fp)
+            f = open(train_name, mode="a")
+            for content_list, label_list in datas:
+                for content, label in zip(content_list, label_list):
+                    f.write("{} {}\n".format(content, label))
+                f.write("\n")
+            f.close()
     return
 
 
 if __name__ == "__main__":
     # format_files("/home/aipf/work/建行杯数据集/舆情预警/train", "/home/aipf/work/建行杯数据集/舆情预警/train2")
-    format_files("datasets/aipf", "datasets/aipf2")
+    format_files_shuffle("datasets/aipf", "datasets/aipf2")
+    # format_predict_files("datasets/aipf", "datasets/aipf2")

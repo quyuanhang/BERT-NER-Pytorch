@@ -105,3 +105,4 @@ venv.bak/
 
 datasets
 outputs
+prev_trained_model

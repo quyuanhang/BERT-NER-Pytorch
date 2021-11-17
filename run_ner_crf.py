@@ -318,6 +318,15 @@ def predict(args, model, tokenizer, prefix=""):
                         json_d['label'][tag][word] = [[start, end]]
             test_submit.append(json_d)
         json_to_text(output_submit_file,test_submit)
+    if args.task_name == 'aipf2':
+        with open(args.predict_input_json) as f:
+            datas = json.load(f)
+        for data, result in zip(datas["result"], results):
+            data["spans"] = result["entities"]
+        with open(args.predict_output_json, "w") as f:
+            json.dump(datas, f, ensure_ascii=False)
+    return
+
 
 def load_and_cache_examples(args, task, tokenizer, data_type='train'):
     if args.local_rank not in [-1, 0] and not evaluate:
