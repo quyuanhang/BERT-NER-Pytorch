@@ -1,5 +1,5 @@
 CURRENT_DIR=`pwd`
-export BERT_BASE_DIR=$CURRENT_DIR/prev_trained_model/bert-base-chinese
+export BERT_BASE_DIR=$CURRENT_DIR/prev_trained_model/hflchinese-roberta-wwm-ext-large
 export DATA_DIR=$CURRENT_DIR/datasets
 export OUTPUR_DIR=$CURRENT_DIR/outputs
 TASK_NAME="cner"
@@ -23,6 +23,7 @@ python run_ner_crf.py \
   --output_dir=$OUTPUR_DIR/${TASK_NAME}_output/ \
   --overwrite_output_dir \
   --seed=42 \
+  --do_train \
   --do_predict \
   --predict_checkpoints=160 \
   --predict_input_json=$DATA_DIR/${TASK_NAME}/test.json \
