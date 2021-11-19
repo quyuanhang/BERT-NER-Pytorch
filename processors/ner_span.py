@@ -249,15 +249,15 @@ class AipfProcessor(DataProcessor):
 
     def get_train_examples(self, data_dir):
         """See base class."""
-        return self._create_examples(self._read_text(os.path.join(data_dir, "train.char.bmes")), "train")
+        return self._create_examples(self._read_text(os.path.join(data_dir, "train.txt")), "train")
 
     def get_dev_examples(self, data_dir):
         """See base class."""
-        return self._create_examples(self._read_text(os.path.join(data_dir, "dev.char.bmes")), "dev")
+        return self._create_examples(self._read_text(os.path.join(data_dir, "dev.txt")), "dev")
 
     def get_test_examples(self, data_dir):
         """See base class."""
-        return self._create_examples(self._read_text(os.path.join(data_dir, "test.char.bmes")), "test")
+        return self._create_examples(self._read_text(os.path.join(data_dir, "test.txt")), "test")
 
     def get_labels(self):
         """See base class."""

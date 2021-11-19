@@ -158,7 +158,8 @@ def train(args, train_dataset, model, tokenizer):
                     print(" ")
                     if args.local_rank == -1:
                         # Only evaluate when single GPU otherwise metrics may not average well
-                        evaluate(args, model, tokenizer)
+                        evaluate(args, model, tokenizer, prefix="train data", data_type="train")
+                        evaluate(args, model, tokenizer, prefix="dev data", data_type="dev")
                 if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
                     # Save model checkpoint
                     output_dir = os.path.join(args.output_dir, "checkpoint-{}".format(global_step))
@@ -180,12 +181,12 @@ def train(args, train_dataset, model, tokenizer):
     return global_step, tr_loss / global_step
 
 
-def evaluate(args, model, tokenizer, prefix=""):
+def evaluate(args, model, tokenizer, prefix="", data_type='dev'):
     metric = SeqEntityScore(args.id2label, markup=args.markup)
     eval_output_dir = args.output_dir
     if not os.path.exists(eval_output_dir) and args.local_rank in [-1, 0]:
         os.makedirs(eval_output_dir)
-    eval_dataset = load_and_cache_examples(args, args.task_name, tokenizer, data_type='dev')
+    eval_dataset = load_and_cache_examples(args, args.task_name, tokenizer, data_type=data_type)
     args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
     # Note that DistributedSampler samples randomly
     eval_sampler = SequentialSampler(eval_dataset) if args.local_rank == -1 else DistributedSampler(eval_dataset)
@@ -322,7 +323,14 @@ def predict(args, model, tokenizer, prefix=""):
         with open(args.predict_input_json) as f:
             datas = json.load(f)
         for data, result in zip(datas["result"], results):
-            data["spans"] = result["entities"]
+            entities = {}
+            for label, start, end in result["entities"]:
+                entities["label"] = label
+                entities["start_offset"] = start
+                entities["end_offset"] = end
+                content = data["content"].replace("\t", "")
+                entities["span_name"] = content[start:end]
+            data["spans"] = entities
         with open(args.predict_output_json, "w") as f:
             json.dump(datas, f, ensure_ascii=False)
     return

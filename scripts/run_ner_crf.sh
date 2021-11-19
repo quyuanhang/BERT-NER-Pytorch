@@ -2,7 +2,7 @@ CURRENT_DIR=`pwd`
 export BERT_BASE_DIR=$CURRENT_DIR/prev_trained_model/bert-base-chinese
 export DATA_DIR=$CURRENT_DIR/datasets
 export OUTPUR_DIR=$CURRENT_DIR/outputs
-TASK_NAME="aipf2"
+TASK_NAME="cner"
 #
 python run_ner_crf.py \
   --model_type=bert \
@@ -16,15 +16,14 @@ python run_ner_crf.py \
   --per_gpu_eval_batch_size=24 \
   --learning_rate=3e-5 \
   --crf_learning_rate=1e-3 \
+  --do_train \
   --num_train_epochs=4.0 \
   --logging_steps=-1 \
   --save_steps=-1 \
   --output_dir=$OUTPUR_DIR/${TASK_NAME}_output/ \
   --overwrite_output_dir \
   --seed=42 \
-  --do_train \
-  --do_eval \
-  --evaluate_during_training \
   --do_predict \
+  --predict_checkpoints=160 \
   --predict_input_json=$DATA_DIR/${TASK_NAME}/test.json \
   --predict_output_json=$DATA_DIR/${TASK_NAME}/test2.json

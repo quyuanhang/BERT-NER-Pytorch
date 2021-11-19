@@ -23,4 +23,8 @@ python run_ner_softmax.py \
   --save_steps=-1 \
   --output_dir=$OUTPUR_DIR/${TASK_NAME}_output/ \
   --overwrite_output_dir \
-  --seed=42
+  --seed=42 \
+  --do_predict \
+  --predict_input_json=$DATA_DIR/${TASK_NAME}/test.json \
+  --predict_output_json=$DATA_DIR/${TASK_NAME}/test2.json
+  # --predict_checkpoints=160 \

@@ -8,8 +8,6 @@ python run_ner_span.py \
   --model_type=bert \
   --model_name_or_path=$BERT_BASE_DIR \
   --task_name=$TASK_NAME \
-  --do_train \
-  --do_eval \
   --do_adv \
   --do_lower_case \
   --loss_type=ce \
@@ -19,10 +17,13 @@ python run_ner_span.py \
   --per_gpu_train_batch_size=24 \
   --per_gpu_eval_batch_size=24 \
   --learning_rate=2e-5 \
-  --num_train_epochs=4.0 \
+  --do_train \
+  --num_train_epochs=1.0 \
   --logging_steps=-1 \
   --save_steps=-1 \
   --output_dir=$OUTPUR_DIR/${TASK_NAME}_output/ \
   --overwrite_output_dir \
-  --seed=42
-
+  --seed=42 \
+  --do_predict \
+  --predict_input_json=$DATA_DIR/${TASK_NAME}/test.json \
+  --predict_output_json=$DATA_DIR/${TASK_NAME}/test2.json
