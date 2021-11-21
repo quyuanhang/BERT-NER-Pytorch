@@ -92,20 +92,17 @@ def format_predict_files(input_dir, output_dir):
         os.mkdir(output_dir)
     if os.path.exists(train_name):
         os.remove(train_name)
-    for root, _, files in os.walk(input_dir):
-        for file in files:
-            fp = os.path.join(root, file)
-            datas = format_file(fp=fp)
-            f = open(train_name, mode="a")
-            for content_list, label_list in datas:
-                for content, label in zip(content_list, label_list):
-                    f.write("{} {}\n".format(content, label))
-                f.write("\n")
-            f.close()
+    datas = format_file(fp=input_dir)
+    f = open(train_name, mode="a")
+    for content_list, label_list in datas:
+        for content, label in zip(content_list, label_list):
+            f.write("{} {}\n".format(content, label))
+        f.write("\n")
+    f.close()
     return
 
 
 if __name__ == "__main__":
     # format_files("/home/aipf/work/建行杯数据集/舆情预警/train", "/home/aipf/work/建行杯数据集/舆情预警/train2")
     format_files_shuffle("datasets/aipf", "datasets/aipf2")
-    # format_predict_files("datasets/aipf", "datasets/aipf2")
+    format_predict_files("datasets/aipf/train.json", "datasets/aipf2")
