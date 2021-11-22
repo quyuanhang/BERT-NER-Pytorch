@@ -322,15 +322,19 @@ def predict(args, model, tokenizer, prefix=""):
     if args.task_name == 'aipf2':
         with open(args.predict_input_json) as f:
             datas = json.load(f)
+        print(len(datas["result"]), len(results))
+        assert(len(datas["result"]) == len(results))
         for data, result in zip(datas["result"], results):
-            entities = {}
+            data["spans"] = []
             for label, start, end in result["entities"]:
-                entities["label"] = label
-                entities["start_offset"] = start
-                entities["end_offset"] = end
+                start -= 1
+                span = {}
+                span["label"] = label
+                span["start_offset"] = start + 1
+                span["end_offset"] = end + 1
                 content = data["content"].replace("\t", "")
-                entities["span_name"] = content[start:end]
-            data["spans"] = entities
+                span["span_name"] = content[start:end]
+            data["spans"].append(span)
         with open(args.predict_output_json, "w") as f:
             json.dump(datas, f, ensure_ascii=False)
     return

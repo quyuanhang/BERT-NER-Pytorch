@@ -85,12 +85,16 @@ def convert_examples_to_features(examples,label_list,max_seq_length,tokenizer,
         end_ids = [0] * len(tokens)
         subjects_id = []
         for subject in subjects:
-            label = subject[0]
-            start = subject[1]
-            end = subject[2]
-            start_ids[start] = label2id[label]
-            end_ids[end] = label2id[label]
-            subjects_id.append((label2id[label], start, end))
+            try:
+                label = subject[0]
+                start = subject[1]
+                end = subject[2]
+                start_ids[start] = label2id[label]
+                end_ids[end] = label2id[label]
+                subjects_id.append((label2id[label], start, end))
+            except:
+                logger.info("*** span error ***")
+                
         # Account for [CLS] and [SEP] with "- 2".
         special_tokens_count = 2
         if len(tokens) > max_seq_length - special_tokens_count:
@@ -280,8 +284,6 @@ class AipfProcessor(DataProcessor):
         """Creates examples for the training and dev sets."""
         examples = []
         for (i, line) in enumerate(lines):
-            if i == 0:
-                continue
             guid = "%s-%s" % (set_type, i)
             text_a = line['words']
             labels = []
