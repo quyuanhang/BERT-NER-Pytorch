@@ -9,13 +9,14 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset
 from torch.utils.data.distributed import DistributedSampler
 from callback.optimizater.adamw import AdamW
+from callback.adversarial import FGM
 from callback.lr_scheduler import get_linear_schedule_with_warmup
 from callback.progressbar import ProgressBar
 from tools.common import seed_everything,json_to_text
 from tools.common import init_logger, logger
 
 from transformers import WEIGHTS_NAME, BertConfig,get_linear_schedule_with_warmup,AdamW, BertTokenizer
-from models.bert_for_ner import BertCrfForNer
+from models.bert_for_ner import BertBilstmCrfForNer
 from processors.utils_ner import get_entities
 from processors.ner_seq import convert_examples_to_features
 from processors.ner_seq import ner_processors as processors
@@ -25,7 +26,7 @@ from tools.finetuning_argparse import get_argparse
 
 MODEL_CLASSES = {
     ## bert ernie bert_wwm bert_wwwm_ext
-    'bert': (BertConfig, BertCrfForNer, BertTokenizer),
+    'bert': (BertConfig, BertBilstmCrfForNer, BertTokenizer),
 }
 
 def train(args, train_dataset, model, tokenizer):
@@ -42,12 +43,18 @@ def train(args, train_dataset, model, tokenizer):
     # Prepare optimizer and schedule (linear warmup and decay)
     no_decay = ["bias", "LayerNorm.weight"]
     bert_param_optimizer = list(model.bert.named_parameters())
+    lstm_param_optimizer = list(model.lstm.named_parameters())
     crf_param_optimizer = list(model.crf.named_parameters())
-    linear_param_optimizer = list(model.l1.named_parameters()) + list(model.l2.named_parameters())
+    linear_param_optimizer = list(model.classifier.named_parameters())
     optimizer_grouped_parameters = [
         {'params': [p for n, p in bert_param_optimizer if not any(nd in n for nd in no_decay)],
          'weight_decay': args.weight_decay, 'lr': args.learning_rate},
         {'params': [p for n, p in bert_param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0,
+         'lr': args.learning_rate},
+
+        {'params': [p for n, p in lstm_param_optimizer if not any(nd in n for nd in no_decay)],
+         'weight_decay': args.weight_decay, 'lr': args.crf_learning_rate},
+        {'params': [p for n, p in lstm_param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0,
          'lr': args.learning_rate},
 
         {'params': [p for n, p in crf_param_optimizer if not any(nd in n for nd in no_decay)],
@@ -111,6 +118,8 @@ def train(args, train_dataset, model, tokenizer):
         logger.info("  Will skip the first %d steps in the first epoch", steps_trained_in_current_epoch)
 
     tr_loss, logging_loss = 0.0, 0.0
+    if args.do_adv:
+        fgm = FGM(model, emb_name=args.adv_name, epsilon=args.adv_epsilon)
     model.zero_grad()
     seed_everything(args.seed)  # Added here for reproductibility (even between python 2 and 3)
     pbar = ProgressBar(n_total=len(train_dataloader), desc='Training', num_epochs=int(args.num_train_epochs))
@@ -127,7 +136,7 @@ def train(args, train_dataset, model, tokenizer):
                 continue
             model.train()
             batch = tuple(t.to(args.device) for t in batch)
-            inputs = {"input_ids": batch[0], "attention_mask": batch[1], "labels": batch[3]}
+            inputs = {"input_ids": batch[0], "attention_mask": batch[1], "labels": batch[3], 'input_lens': batch[4]}
             if args.model_type != "distilbert":
                 # XLM and RoBERTa don"t use segment_ids
                 inputs["token_type_ids"] = (batch[2] if args.model_type in ["bert", "xlnet"] else None)
@@ -142,6 +151,13 @@ def train(args, train_dataset, model, tokenizer):
                     scaled_loss.backward()
             else:
                 loss.backward()
+            if args.do_adv:
+                fgm.attack()
+                loss_adv = model(**inputs)[0]
+                if args.n_gpu > 1:
+                    loss_adv = loss_adv.mean()
+                loss_adv.backward()
+                fgm.restore()
             pbar(step, {'loss': loss.item()})
             tr_loss += loss.item()
             if (step + 1) % args.gradient_accumulation_steps == 0:
