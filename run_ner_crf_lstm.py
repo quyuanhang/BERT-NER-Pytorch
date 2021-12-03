@@ -341,10 +341,11 @@ def predict(args, model, tokenizer, prefix=""):
             print(len(datas["result"]), len(results))
             assert(len(datas["result"]) == len(results))
         for data, result in zip(datas["result"], results):
-            content = data["content"].replace("\t", "。")
+            content = "".join([x if x.strip() != "" else "。" for x in data["content"]])
             data["spans"] = []
             for label, start, end in result["entities"]:
-                end += 1
+                start = start - len(data["doc_name"]) -1
+                end = end - len(data["doc_name"])
                 span = {}
                 span["span_name"] = content[start:end]
                 span["label"] = label
@@ -463,7 +464,10 @@ def main():
     config = config_class.from_pretrained(args.model_name_or_path,num_labels=num_labels,)
     tokenizer = tokenizer_class.from_pretrained(args.model_name_or_path,
                                                 do_lower_case=args.do_lower_case,)
-    model = model_class.from_pretrained(args.model_name_or_path, config=config)
+    if args.from_ckpt != "":
+        model = model_class.from_pretrained(args.from_ckpt, config=config)
+    else:
+        model = model_class.from_pretrained(args.model_name_or_path, config=config)
     if args.local_rank == 0:
         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 

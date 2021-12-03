@@ -132,10 +132,10 @@ class BertSpanForNer(BertPreTrainedModel):
 
 
 class BertBilstmCrfForNer(BertPreTrainedModel):
-    def __init__(self, config, embedding_dim=768, hidden_dim=128, rnn_layers=1):
+    def __init__(self, config, hidden_dim=128, rnn_layers=1):
         super(BertBilstmCrfForNer, self).__init__(config)
         self.bert = BertModel(config)
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim, num_layers=rnn_layers,
+        self.lstm = nn.LSTM(config.hidden_size, hidden_dim, num_layers=rnn_layers,
                             bidirectional=True, dropout=config.hidden_dropout_prob, batch_first=True)
         self.hidden_dim = hidden_dim
         self.rnn_layers = rnn_layers

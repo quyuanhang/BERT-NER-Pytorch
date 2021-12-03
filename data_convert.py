@@ -15,12 +15,12 @@ def format_file(fp=None, data_list=None):
     datas = []
     for data in data_list:
         try:
-            content_str = data["content"]
-            content_list = [x for x in content_str if x.strip() != ""]
+            content_str = data["doc_name"] + "。" + data["content"]
+            content_list = [x if x.strip() != "" else "。" for x in content_str]
             label_list = ["O"] * len(content_list)
             for span in data["spans"]:
-                start = span["start_offset"]
-                end = span["end_offset"]
+                start = span["start_offset"] + len(data["doc_name"]) + 1
+                end = span["end_offset"] + len(data["doc_name"]) + 1
                 for i in range(start, end):
                     if label_list[i] != "O":
                         break
